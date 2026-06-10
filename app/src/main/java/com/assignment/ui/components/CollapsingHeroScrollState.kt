@@ -91,4 +91,4 @@ fun CollapsingHeroScrollState.currentHeight(
 }
 
 val HERO_EXPANDED_HEIGHT = 300.dp
-val HERO_COLLAPSED_HEIGHT = 148.dp
+val HERO_COLLAPSED_HEIGHT = 112.dp

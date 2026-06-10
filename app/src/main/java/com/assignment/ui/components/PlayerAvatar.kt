@@ -39,7 +39,7 @@ fun avatarDrawableForPlayer(playerId: String): Int {
 fun PlayerAvatar(
     playerId: String,
     modifier: Modifier = Modifier,
-    size: Dp = 44.dp
+    size: Dp = 36.dp
 ) {
     val avatarRes = remember(playerId) { avatarDrawableForPlayer(playerId) }
 

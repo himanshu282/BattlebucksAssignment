@@ -81,7 +81,7 @@ fun LeaderboardItem(
 
         Text(
             text = entry.username,
-            color = LeaderboardTextPrimary,
+            color = if (entry.rank <= 3) LeaderboardGold else LeaderboardTextPrimary,
             fontSize = 13.sp,
             fontWeight = FontWeight.SemiBold,
             modifier = Modifier.weight(1f)

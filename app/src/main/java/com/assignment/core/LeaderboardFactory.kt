@@ -33,11 +33,11 @@ object LeaderboardFactory {
     private fun defaultPlayers(): List<Player> = listOf(
         Player(id = "player_1", username = "Deepender"),
         Player(id = "player_2", username = "Predekin_Singh"),
-        Player(id = "player_3", username = "Himanshu"),
+        Player(id = "player_3", username = "Premjit"),
         Player(id = "player_4", username = "Manya Aggarwal"),
         Player(id = "player_5", username = "Vishal"),
         Player(id = "player_6", username = "Shreyas"),
         Player(id = "player_7", username = "Anwesha"),
-        Player(id = CURRENT_USER_ID, username = "Premjit")
+        Player(id = CURRENT_USER_ID, username = "Himanshu")
     )
 }

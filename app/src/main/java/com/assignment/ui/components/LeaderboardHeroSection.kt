@@ -118,33 +118,40 @@ fun LeaderboardHeroSection(
         ) {
             SeasonSelector()
 
-            Text(
-                text = "Season ends in 60 days.",
-                color = LeaderboardTextSecondary.copy(alpha = expandedAlpha),
-                fontSize = 13.sp,
-                modifier = Modifier
-                    .padding(top = 6.dp)
-                    .alpha(expandedAlpha)
-            )
-
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-            ) {
-                ExpandedHeroContent(
-                    currentUserEntry = currentUserEntry,
-                    currentUserId = currentUserId,
-                    alpha = expandedAlpha,
-                    avatarScale = avatarScale,
-                    modifier = Modifier.align(Alignment.Center)
+            if (expandedAlpha > 0.05f) {
+                Text(
+                    text = "Season ends in 60 days.",
+                    color = LeaderboardTextSecondary.copy(alpha = expandedAlpha),
+                    fontSize = 13.sp,
+                    modifier = Modifier
+                        .padding(top = 6.dp)
+                        .alpha(expandedAlpha)
                 )
+            }
 
+            if (expandedAlpha > 0.05f) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                ) {
+                    ExpandedHeroContent(
+                        currentUserEntry = currentUserEntry,
+                        currentUserId = currentUserId,
+                        alpha = expandedAlpha,
+                        avatarScale = avatarScale,
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                }
+            } else if (collapsedAlpha > 0f) {
+                Spacer(modifier = Modifier.height(12.dp))
+            }
+
+            if (collapsedAlpha > 0f) {
                 CollapsedUserBar(
                     currentUserEntry = currentUserEntry,
                     currentUserId = currentUserId,
-                    alpha = collapsedAlpha,
-                    modifier = Modifier.align(Alignment.BottomStart)
+                    alpha = collapsedAlpha
                 )
             }
         }
@@ -192,17 +199,14 @@ private fun CollapsedUserBar(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(bottom = 12.dp)
-            .graphicsLayer {
-                this.alpha = alpha
-                translationY = (1f - alpha) * 16.dp.toPx()
-            },
+            .padding(bottom = 8.dp)
+            .graphicsLayer { this.alpha = alpha },
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         PlayerAvatar(
             playerId = currentUserId,
-            size = 48.dp
+            size = 32.dp
         )
 
         StatPill(
