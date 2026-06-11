@@ -209,11 +209,10 @@ Requires architectural shifts:
 
 | Layer | Approach |
 |---|---|
-| **Engine** | Move score generation to a backend (WebSocket / SSE / gRPC stream). Client consumes events, does not simulate. |
+| **Engine** | Move score generation to a backend (WebSocket). Client consumes events, does not simulate. |
 | **Domain** | Incremental ranking — update only affected ranks instead of full sort on every event. Or server-side ranking with client displaying a window. |
 | **State** | Paginated / windowed leaderboard (top 100 + current user neighbourhood). Do not hold 100K `LeaderboardEntry` objects in memory. |
 | **UI** | `LazyColumn` with pagination (`Paging 3`), diff util for partial updates, avoid full list replacement in `StateFlow`. |
-| **Storage** | Redis sorted sets or DB index on score for O(log n) rank lookup server-side. |
 | **Networking** | Backpressure-aware stream; client applies events on `Dispatchers.Default`, publishes throttled snapshots to UI. |
 
 At 100K scale, ranking should not live on the client for the full dataset — the phone receives a **viewport** (e.g. ranks 1–50 + user's rank) from the server.
@@ -267,10 +266,9 @@ This mirrors **Clean Architecture dependency direction**: UI → Domain → Engi
 | **Cold `Flow` with single collector** | Keeps the engine simple and testable; `LeaderboardUseCase.start()` guards against double collection. |
 | **`LeaderboardFactory` object** | Lightweight DI without Hilt/Koin for this scope. |
 | **Player list passed to both engine and use case** | Engine needs players for random selection; use case needs them for ranking. Duplication is acceptable at this scale. |
-| **Current user ID in config, not auth** | No real login; `player_8` (Premjit) stands in for the device user. |
+| **Current user ID in config, not auth** | No real login; `player_8` (Himanshu) stands in for the device user. |
 | **`StateFlow.update` equality check** | Avoids redundant emissions when recalculated list is unchanged; reduces Compose recompositions. |
 | **Hero height driven by scroll offset, not `animateDpAsState`** | Finger-linked collapse feels more natural (CoordinatorLayout behaviour). |
-| **compileSdk 36** | Required by androidx dependencies (`core-ktx 1.18.0`, `activity-compose 1.13.0`). |
 | **Full list in `StateFlow`** | Simple and correct for 8 players; would switch to windowed/paginated state at scale. |
 | **Rank-up animation in UI** | Fast to ship; domain would own `rankDelta` in a production app. |
 | **No pause on background** | Demo prioritises continuous live updates over battery optimisation. |
@@ -285,10 +283,8 @@ This mirrors **Clean Architecture dependency direction**: UI → Domain → Engi
 4. **`SavedStateHandle`** — survive process death; restore scores and collapse state.
 5. **Rank-change metadata in domain** — expose `rankDelta` from the use case instead of inferring it in `LeaderboardItem` composables.
 6. **Compose `animateItem()`** — smoother list reordering when ranks change.
-7. **Screenshot / Compose UI tests** — verify collapsing hero, safe area, and list rendering.
-8. **Pagination / large leaderboards** — virtualize or window rankings for hundreds of players.
-9. **Real auth integration** — resolve current user from session instead of a hardcoded `currentUserId`.
-10. **Turbine + more ViewModel tests** — broader coverage of `uiState` mapping and lifecycle behaviour.
+7. **Pagination / large leaderboards** — virtualize or window rankings for hundreds of players.
+8. **Real auth integration** — resolve current user from session instead of a hardcoded `currentUserId`.
 
 ---
 
@@ -515,16 +511,3 @@ Review of this codebase as if submitted by a mid-level engineer. Eight comments 
 | **Accessibility** | `contentDescription` on rank trends; semantic headings for hero |
 | **Offline** | Show stale data with banner; queue is N/A if server-authoritative |
 | **ProGuard** | Keep rules for `LeaderboardEntry`, kotlinx serialization if added |
-| **Release signing** | Separate `release` build type; no debug factory in production |
-
----
-
-## Leadership Summary
-
-This submission demonstrates:
-
-- **Modular thinking** — engine and domain are independently testable
-- **Correct ranking** — competition rules with unit test coverage (6 cases)
-- **Production awareness** — documented gaps (background drain, hardcoded user, scale limits)
-- **Team leadership** — clear 7-day scope, role split, and prioritized code review
-- **Quality culture** — unit test coverage, anti-cheat and prod checklist for next iteration
