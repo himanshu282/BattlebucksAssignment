@@ -85,21 +85,21 @@ Consumes score events and maintains ranked leaderboard state. **Does not generat
 ## Architecture Overview
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                         UI Layer                            │
+┌────────────────────────────────────────────────────────────────┐
+│                         UI Layer                               │
 │  LeaderboardScreen → LeaderboardViewModel → LeaderboardUiState │
-│  (Compose only — no ranking or score logic)                 │
-└───────────────────────────┬─────────────────────────────────┘
+│  (Compose only — no ranking or score logic)                    │
+└───────────────────────────┬────────────────────────────────────┘
                             │ collectAsStateWithLifecycle
 ┌───────────────────────────▼─────────────────────────────────┐
 │                      Domain Layer                           │
-│  LeaderboardUseCase → RankingCalculator                       │
-│  StateFlow<List<LeaderboardEntry>>                            │
+│  LeaderboardUseCase → RankingCalculator                     │
+│  StateFlow<List<LeaderboardEntry>>                          │
 └───────────────────────────┬─────────────────────────────────┘
                             │ Flow<ScoreEvent>
 ┌───────────────────────────▼─────────────────────────────────┐
 │                      Engine Layer                           │
-│  RandomScoreGenerator : ScoreGenerator                        │
+│  RandomScoreGenerator : ScoreGenerator                      │
 │  (UI-agnostic, testable, reusable)                          │
 └─────────────────────────────────────────────────────────────┘
 ```
