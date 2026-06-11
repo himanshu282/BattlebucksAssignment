@@ -21,3 +21,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "BattleBucksAssignment"
 include(":app")
+include(":engine")
+include(":leaderboard")

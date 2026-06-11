@@ -18,9 +18,17 @@ A Jetpack Compose Android app that simulates a live gaming leaderboard with two 
 3. Select a run configuration for the `app` module.
 4. Click **Run** (or `./gradlew :app:installDebug` from the project root).
 
+> **Note:** The application id is `com.assignment`. If you previously installed an older build under `com.himanshu.assignment`, uninstall it first (`adb uninstall com.himanshu.assignment`) and sync Gradle before running.
+
 ### Run unit tests
 
 ```bash
+# All modules
+./gradlew :engine:test :leaderboard:test :app:testDebugUnitTest
+
+# Individual modules
+./gradlew :engine:test
+./gradlew :leaderboard:test
 ./gradlew :app:testDebugUnitTest
 ```
 
@@ -36,9 +44,21 @@ The APK is generated at `app/build/outputs/apk/debug/app-debug.apk`.
 
 ## Module Responsibilities
 
-### Module 1 — Score Generator Engine (`com.assignment.engine`)
+The project is split into three Gradle modules with compile-time dependency boundaries:
 
-Simulates a game backend that emits score events continuously.
+```
+:app  →  :leaderboard  →  :engine
+```
+
+| Gradle module | Package | Role |
+|---|---|---|
+| `:engine` | `com.assignment.engine` | Score generation (pure JVM Kotlin) |
+| `:leaderboard` | `com.assignment.leaderboard` | Ranking, use case, factory wiring |
+| `:app` | `com.assignment` | Android UI, ViewModel, theme, `MainActivity` |
+
+### Module 1 — Score Generator Engine (`:engine`)
+
+Simulates a game backend that emits score events continuously. **No Android dependencies.**
 
 | Component | Responsibility |
 |---|---|
@@ -46,6 +66,7 @@ Simulates a game backend that emits score events continuously.
 | `ScoreEvent` | A single score increment for one player |
 | `ScoreGenerator` | Contract: `scoreUpdates(): Flow<ScoreEvent>` |
 | `RandomScoreGenerator` | Emits random events forever using a seeded `Random` |
+| `GameEngine` | Facade entry point — `GameEngine.create(players, seed)` |
 
 **Behaviour**
 
@@ -54,9 +75,9 @@ Simulates a game backend that emits score events continuously.
 - Score increment between **1** and **20**
 - Scores only increase (positive increments only)
 - Deterministic per session via `seed`
-- No Android dependencies — pure Kotlin + Coroutines
+- `FakeScoreGenerator` provided via `testFixtures` for downstream module tests
 
-### Module 2 — Leaderboard Domain (`com.assignment.domain`)
+### Module 2 — Leaderboard (`:leaderboard`)
 
 Consumes score events and maintains ranked leaderboard state. **Does not generate scores.**
 
@@ -65,6 +86,8 @@ Consumes score events and maintains ranked leaderboard state. **Does not generat
 | `LeaderboardEntry` | Ranked row: `rank`, `playerId`, `username`, `score` |
 | `RankingCalculator` | Competition ranking (ties share rank; next rank skips) |
 | `LeaderboardUseCase` | Accumulates scores, recalculates ranks, exposes `StateFlow` |
+| `LeaderboardConfig` | Session config: players, current user id, seed |
+| `LeaderboardFactory` | Wires `GameEngine` + `LeaderboardUseCase` for the app |
 
 **Business rules**
 
@@ -72,13 +95,14 @@ Consumes score events and maintains ranked leaderboard state. **Does not generat
 - Same score → same rank (`100, 100 → 1, 1` then `90 → 3`)
 - Publishes only when the leaderboard list actually changes
 
-### Supporting Layers
+### Module 3 — App UI (`:app`)
 
 | Package | Responsibility |
 |---|---|
-| `com.assignment.core` | `LeaderboardConfig`, `LeaderboardFactory` — wires engine + domain |
-| `com.assignment.ui` | ViewModel, Compose screens, collapsing hero, list items |
-| `com.himanshu.assignment` | `MainActivity`, Material theme |
+| `com.assignment` | `MainActivity`, application entry point (`applicationId`: `com.assignment`) |
+| `com.assignment.ui.leaderboard` | Screen, ViewModel, UiState, ViewModelFactory |
+| `com.assignment.ui.components` | List item, hero section, avatars, score badge, collapsing scroll |
+| `com.assignment.ui.theme` | Material theme and colours |
 
 ---
 
@@ -86,34 +110,35 @@ Consumes score events and maintains ranked leaderboard state. **Does not generat
 
 ```
 ┌────────────────────────────────────────────────────────────────┐
-│                         UI Layer                               │
+│  :app — UI Layer (com.assignment.ui)                           │
 │  LeaderboardScreen → LeaderboardViewModel → LeaderboardUiState │
 │  (Compose only — no ranking or score logic)                    │
 └───────────────────────────┬────────────────────────────────────┘
                             │ collectAsStateWithLifecycle
 ┌───────────────────────────▼─────────────────────────────────┐
-│                      Domain Layer                           │
-│  LeaderboardUseCase → RankingCalculator                     │
+│  :leaderboard — Leaderboard Layer                           │
+│  LeaderboardFactory → LeaderboardUseCase → RankingCalculator│
 │  StateFlow<List<LeaderboardEntry>>                          │
 └───────────────────────────┬─────────────────────────────────┘
                             │ Flow<ScoreEvent>
 ┌───────────────────────────▼─────────────────────────────────┐
-│                      Engine Layer                           │
-│  RandomScoreGenerator : ScoreGenerator                      │
-│  (UI-agnostic, testable, reusable)                          │
+│  :engine — Engine Layer                                     │
+│  GameEngine → RandomScoreGenerator : ScoreGenerator         │
+│  (pure JVM Kotlin — UI-agnostic, testable, reusable)        │
 └─────────────────────────────────────────────────────────────┘
 ```
 
 **Data flow**
 
-1. `RandomScoreGenerator` emits `ScoreEvent` on a cold `Flow`.
-2. `LeaderboardUseCase` collects events on `Dispatchers.Default`, updates an internal score map, and recalculates via `RankingCalculator`.
-3. `LeaderboardViewModel` maps domain state to `LeaderboardUiState` (entries + current user) and exposes it via `StateFlow`.
-4. `LeaderboardScreen` renders a collapsing hero (logged-in user rank/score) and a `LazyColumn` of all players.
+1. `LeaderboardFactory` creates a `GameEngine` (wrapping `RandomScoreGenerator`) and a `LeaderboardUseCase`.
+2. `GameEngine` emits `ScoreEvent` on a cold `Flow`.
+3. `LeaderboardUseCase` collects events on `Dispatchers.Default`, updates an internal score map, and recalculates via `RankingCalculator`.
+4. `LeaderboardViewModel` maps leaderboard state to `LeaderboardUiState` (entries + current user) and exposes it via `StateFlow`.
+5. `LeaderboardScreen` renders a collapsing hero (logged-in user rank/score) and a `LazyColumn` of all players.
 
 **MVVM + Clean Architecture principles**
 
-- Strict separation: score generation, ranking logic, and UI rendering live in separate packages.
+- Strict separation across Gradle modules: engine, leaderboard, and UI cannot be bypassed at compile time.
 - ViewModel has no ranking or score-generation logic.
 - Compose UI has no business logic.
 
@@ -159,7 +184,7 @@ No blocking I/O or heavy synchronous work runs on the Main thread. The UI thread
 | `viewModelScope` for collection | Coroutine cancelled automatically when ViewModel is cleared |
 | `WhileSubscribed` on `stateIn` | Stops collecting when no active UI subscribers |
 | Single guarded collector | `AtomicBoolean` in `start()` prevents duplicate Flow subscriptions |
-| No static references to Activity/Context in domain/engine | Engine and domain are Android-free |
+| No static references to Activity/Context in leaderboard/engine | Engine and leaderboard modules are Android-free |
 | `collectAsStateWithLifecycle` | Collection pauses when the screen is stopped, lifecycle-aware |
 | `LaunchedEffect` keyed by `playerId` | Item-level effects are scoped to composable lifetime |
 
@@ -224,21 +249,22 @@ At 100K scale, ranking should not live on the client for the full dataset — th
 ### Why we split modules this way
 
 ```
-engine  →  domain  →  ui  (+ core for wiring)
+:engine  →  :leaderboard  →  :app
 ```
 
-| Package | Why it exists |
+| Gradle module | Why it exists |
 |---|---|
-| **`engine`** | Simulates an external game backend. Pure Kotlin, no Android. Could be reused in unit tests, JVM benchmarks, or swapped for a real network adapter without touching UI. |
-| **`domain`** | Owns business rules and state. Consumes `ScoreGenerator` but never generates scores — matches the assignment's consumer constraint. |
-| **`ui`** | Rendering and lifecycle only. Depends on domain models, not on `RandomScoreGenerator` directly. |
-| **`core`** | Composition root for the app — creates engine + use case + config. Keeps ViewModel free of `new RandomScoreGenerator(...)` calls. |
+| **`:engine`** | Simulates an external game backend. Pure JVM Kotlin, no Android. Could be reused in unit tests, JVM benchmarks, or swapped for a real network adapter without touching UI. |
+| **`:leaderboard`** | Owns business rules and state. Consumes `ScoreGenerator` but never generates scores — matches the assignment's consumer constraint. `LeaderboardFactory` is the composition root. |
+| **`:app`** | Android delivery layer — rendering, lifecycle, and theme only. Depends on `:leaderboard`, not on `RandomScoreGenerator` directly. |
 
-This mirrors **Clean Architecture dependency direction**: UI → Domain → Engine (via interfaces). The assignment's two modules map directly to `engine` and `domain`; `ui` and `core` are the Android delivery layer.
+This mirrors **Clean Architecture dependency direction**: App → Leaderboard → Engine (via interfaces). The assignment's two modules map directly to `:engine` and `:leaderboard`; `:app` is the Android presentation layer.
+
+`:engine` exposes `testFixtures` (`FakeScoreGenerator`) so `:leaderboard` and `:app` can test without a live score stream.
 
 ### Where ranking logic lives and why
 
-**`RankingCalculator` in `com.assignment.domain`** — and nowhere else.
+**`RankingCalculator` in `com.assignment.leaderboard`** — and nowhere else.
 
 | Layer | Has ranking logic? |
 |---|---|
@@ -247,11 +273,11 @@ This mirrors **Clean Architecture dependency direction**: UI → Domain → Engi
 | `LeaderboardViewModel` | ❌ No — maps `StateFlow` to `LeaderboardUiState` |
 | Compose UI | ❌ No — displays `rank`, `username`, `score` as-is |
 
-**Why domain, not ViewModel?**
+**Why leaderboard module, not ViewModel?**
 
 - Ranking is a **business rule** (ties, rank skipping, sort order), not presentation logic.
 - `RankingCalculator` is a pure function — trivially unit testable without Robolectric or Compose.
-- ViewModel stays thin: subscribe, map, expose. If ranking rules change, only domain changes.
+- ViewModel stays thin: subscribe, map, expose. If ranking rules change, only the leaderboard module changes.
 
 **Why not in the UseCase class body?**
 
@@ -262,7 +288,8 @@ This mirrors **Clean Architecture dependency direction**: UI → Domain → Engi
 
 | Decision | Rationale |
 |---|---|
-| **Single app module** instead of multi-module Gradle project | Faster setup for an assignment; packages still enforce layer boundaries. |
+| **Multi-module Gradle split** (`:engine`, `:leaderboard`, `:app`) | Enforces dependency direction at compile time; engine has zero Android deps. |
+| **`GameEngine` facade** | Single entry point for the engine module; hides `RandomScoreGenerator` construction from consumers. |
 | **Cold `Flow` with single collector** | Keeps the engine simple and testable; `LeaderboardUseCase.start()` guards against double collection. |
 | **`LeaderboardFactory` object** | Lightweight DI without Hilt/Koin for this scope. |
 | **Player list passed to both engine and use case** | Engine needs players for random selection; use case needs them for ranking. Duplication is acceptable at this scale. |
@@ -270,46 +297,66 @@ This mirrors **Clean Architecture dependency direction**: UI → Domain → Engi
 | **`StateFlow.update` equality check** | Avoids redundant emissions when recalculated list is unchanged; reduces Compose recompositions. |
 | **Hero height driven by scroll offset, not `animateDpAsState`** | Finger-linked collapse feels more natural (CoordinatorLayout behaviour). |
 | **Full list in `StateFlow`** | Simple and correct for 8 players; would switch to windowed/paginated state at scale. |
-| **Rank-up animation in UI** | Fast to ship; domain would own `rankDelta` in a production app. |
+| **Rank-up animation in UI** | Fast to ship; leaderboard module would own `rankDelta` in a production app. |
 | **No pause on background** | Demo prioritises continuous live updates over battery optimisation. |
 
 ---
 
 ## What I'd Improve With More Time
 
-1. **Gradle multi-module split** — `engine` and `domain` as pure Kotlin modules with zero Android deps; stricter compile-time boundaries.
-2. **Hilt / Koin DI** — replace `LeaderboardFactory` with injectable interfaces for production and test doubles.
-3. **`SharedFlow` or channel-based engine** — if multiple consumers ever need the same event stream without restarting the cold flow.
-4. **`SavedStateHandle`** — survive process death; restore scores and collapse state.
-5. **Rank-change metadata in domain** — expose `rankDelta` from the use case instead of inferring it in `LeaderboardItem` composables.
-6. **Compose `animateItem()`** — smoother list reordering when ranks change.
-7. **Pagination / large leaderboards** — virtualize or window rankings for hundreds of players.
-8. **Real auth integration** — resolve current user from session instead of a hardcoded `currentUserId`.
+1. **Hilt / Koin DI** — replace `LeaderboardFactory` with injectable interfaces for production and test doubles.
+2. **`SharedFlow` or channel-based engine** — if multiple consumers ever need the same event stream without restarting the cold flow.
+3. **`SavedStateHandle`** — survive process death; restore scores and collapse state.
+4. **Rank-change metadata in leaderboard module** — expose `rankDelta` from the use case instead of inferring it in `LeaderboardItem` composables.
+5. **Compose `animateItem()`** — smoother list reordering when ranks change.
+6. **Pagination / large leaderboards** — virtualize or window rankings for hundreds of players.
+7. **Real auth integration** — resolve current user from session instead of a hardcoded `currentUserId`.
 
 ---
 
 ## Test Coverage
 
-| Test class | What it verifies |
-|---|---|
-| `RankingCalculatorTest` | Empty list, single player, ties, rank skipping, alphabetical tie-break, descending order |
-| `LeaderboardUseCaseTest` | Score accumulation, unknown player ignored, idempotent `start()` |
-| `RandomScoreGeneratorTest` | Valid event range, session determinism, empty player guard |
-| `LeaderboardViewModelTest` | `uiState` maps current user correctly |
-| `LeaderboardUiStateTest` | Current user kept in list when ranked |
+| Test class | Module | What it verifies |
+|---|---|---|
+| `RandomScoreGeneratorTest` | `:engine` | Valid event range, session determinism, empty player guard |
+| `RankingCalculatorTest` | `:leaderboard` | Empty list, single player, ties, rank skipping, alphabetical tie-break, descending order |
+| `LeaderboardUseCaseTest` | `:leaderboard` | Score accumulation, unknown player ignored, idempotent `start()` |
+| `LeaderboardViewModelTest` | `:app` | `uiState` maps current user correctly |
+| `LeaderboardUiStateTest` | `:app` | Current user kept in list when ranked |
 
 ---
 
 ## Project Structure
 
 ```
-com.assignment/
-├── engine/          # Score generation (no Android)
-├── domain/          # Ranking + use case
-├── ui/
-│   ├── leaderboard/ # Screen, ViewModel, UiState
-│   └── components/    # Hero, list item, collapsing scroll
-└── core/            # Config + factory wiring
+BattleBucksAssignment/
+│
+├── app/                          # Android application module
+│   └── src/main/java/com/assignment/
+│       ├── MainActivity.kt
+│       └── ui/
+│           ├── leaderboard/      # Screen, ViewModel, UiState, ViewModelFactory
+│           ├── components/       # Hero, list item, avatars, collapsing scroll
+│           └── theme/            # Colours, typography, Material theme
+│
+├── leaderboard/                  # Pure JVM Kotlin — ranking + use case
+│   └── src/main/java/com/assignment/leaderboard/
+│       ├── LeaderboardEntry.kt
+│       ├── RankingCalculator.kt
+│       ├── LeaderboardUseCase.kt
+│       ├── LeaderboardConfig.kt
+│       └── LeaderboardFactory.kt
+│
+├── engine/                       # Pure JVM Kotlin — score generation
+│   └── src/main/java/com/assignment/engine/
+│       ├── Player.kt
+│       ├── ScoreEvent.kt
+│       ├── ScoreGenerator.kt
+│       ├── RandomScoreGenerator.kt
+│       └── GameEngine.kt
+│
+├── settings.gradle.kts           # include(":app", ":engine", ":leaderboard")
+└── gradle/libs.versions.toml
 ```
 
 ---
@@ -318,13 +365,13 @@ com.assignment/
 
 Review of this codebase as if submitted by a mid-level engineer. Eight comments with category and reasoning.
 
-### 1. Must Fix — Score events are not validated in the domain layer
+### 1. Must Fix — Score events are not validated in the leaderboard layer
 
-**Where:** `LeaderboardUseCase.applyScoreEvent()`
+**Where:** `LeaderboardUseCase.applyScoreEvent()` (`:leaderboard` module)
 
 **Comment:** The use case blindly adds `event.scoreIncrement` without checking it is positive. The engine only emits `1–20`, but the consumer module should enforce the business rule *"scores only increase"* at the boundary. A buggy or malicious `ScoreGenerator` could pass negative values.
 
-**Reasoning:** Domain layer must protect invariants regardless of upstream behaviour. Defence in depth is standard for consumer modules.
+**Reasoning:** The leaderboard module must protect invariants regardless of upstream behaviour. Defence in depth is standard for consumer modules.
 
 ---
 
@@ -354,7 +401,7 @@ Review of this codebase as if submitted by a mid-level engineer. Eight comments 
 
 **Comment:** UI infers rank improvements by remembering prior rank locally. Scrolled-off items reset state; fast rank changes can miss or duplicate the green arrow indicator.
 
-**Reasoning:** Presentation side-effects (rank delta) belong in domain or ViewModel. UI should render `entry.rankDelta` from immutable state.
+**Reasoning:** Presentation side-effects (rank delta) belong in the leaderboard module or ViewModel. UI should render `entry.rankDelta` from immutable state.
 
 ---
 
@@ -378,13 +425,13 @@ Review of this codebase as if submitted by a mid-level engineer. Eight comments 
 
 ---
 
-### 7. Tech Debt — Single Gradle module with package separation
+### 7. Improvement — `LeaderboardFactory` is a static object
 
-**Where:** Project structure
+**Where:** `leaderboard` module — `LeaderboardFactory`
 
-**Comment:** `engine`, `domain`, and `ui` are packages, not modules. Nothing prevents `ui` from importing `RandomScoreGenerator` directly and bypassing the domain layer.
+**Comment:** Factory wiring works for a demo, but static `object` factories make swapping implementations in tests and production harder than interface-based DI.
 
-**Reasoning:** Assignment-appropriate trade-off. Multi-module Gradle would enforce dependency direction at compile time.
+**Reasoning:** Hilt/Koin would replace this with injectable modules. Acceptable for assignment scope; worth upgrading before production.
 
 ---
 
@@ -423,9 +470,8 @@ Review of this codebase as if submitted by a mid-level engineer. Eight comments 
 | Safe area / edge-to-edge fine-tuning | Polish |
 | Custom avatars / hero gradient | Design polish |
 | `SavedStateHandle` / rotation scroll restore | UX improvement, not MVP |
-| Multi-module Gradle split | Architecture ideal, not MVP |
+| Instrumented UI tests | Manual QA acceptable in 7 days |
 | Hilt / Koin DI | Factory is sufficient for demo |
-| Instrumented / screenshot tests | Manual QA acceptable in 7 days |
 | Background pause for score generator | Document as known gap |
 | Anti-cheat / server backend | Out of scope for 7-day client MVP |
 
@@ -434,7 +480,7 @@ Review of this codebase as if submitted by a mid-level engineer. Eight comments 
 | Day | Focus |
 |---|---|
 | 1 | Engine module + tests |
-| 2 | Domain module + ranking tests |
+| 2 | Leaderboard module + ranking tests |
 | 3 | ViewModel + basic Compose list |
 | 4 | Wire factory, lifecycle, StateFlow |
 | 5 | Unit tests, bug fixes, README architecture |
@@ -463,7 +509,7 @@ Review of this codebase as if submitted by a mid-level engineer. Eight comments 
 - `LeaderboardScreen` + `collectAsStateWithLifecycle`
 - Unit tests: `RankingCalculatorTest`, `LeaderboardUseCaseTest`
 - `LeaderboardFactory` wiring
-- README architecture + module responsibilities sections
+- README architecture + module responsibilities sections (`:engine`, `:leaderboard`, `:app`)
 
 **Why:** Owns the data flow and business rules end-to-end. Can work with minimal supervision.
 
@@ -504,7 +550,7 @@ Review of this codebase as if submitted by a mid-level engineer. Eight comments 
 |---|---|
 | **Persistence** | Cache last leaderboard snapshot in Room; restore on cold start |
 | **Process death** | `SavedStateHandle` for scores + scroll state |
-| **DI** | Hilt modules: `EngineModule`, `DomainModule`, `ViewModelModule` |
+| **DI** | Hilt modules: `EngineModule`, `LeaderboardModule`, `ViewModelModule` |
 | **Observability** | Log score events at debug; Firebase Performance traces for recomposition count |
 | **Crash reporting** | Sentry / Firebase Crashlytics with breadcrumbs for last N events |
 | **Feature flags** | Remote config for interval ranges, player count, animation toggles |

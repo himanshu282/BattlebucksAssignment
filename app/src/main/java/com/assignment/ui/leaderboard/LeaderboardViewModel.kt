@@ -2,7 +2,7 @@ package com.assignment.ui.leaderboard
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.assignment.domain.LeaderboardUseCase
+import com.assignment.leaderboard.LeaderboardUseCase
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map

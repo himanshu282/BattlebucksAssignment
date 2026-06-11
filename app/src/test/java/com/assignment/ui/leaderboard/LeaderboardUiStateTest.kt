@@ -1,6 +1,6 @@
 package com.assignment.ui.leaderboard
 
-import com.assignment.domain.LeaderboardEntry
+import com.assignment.leaderboard.LeaderboardEntry
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue

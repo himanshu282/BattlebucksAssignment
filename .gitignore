@@ -1,15 +1,58 @@
-*.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-.DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
+# Gradle
+.gradle/
+**/build/
+gradle-app.setting
+.gradletasknamecache
+
+# Local machine config (SDK path)
 local.properties
+
+# Android Studio / IntelliJ
+*.iml
+.idea/caches/
+.idea/libraries/
+.idea/modules.xml
+.idea/workspace.xml
+.idea/navEditor.xml
+.idea/assetWizardSettings.xml
+.idea/shelf/
+.idea/tasks.xml
+.idea/usage.statistics.xml
+.idea/dictionaries/
+.idea/httpRequests/
+.idea/replState.xml
+.idea/deploymentTargetSelector.xml
+
+# Kotlin
+.kotlin/
+
+# Built artifacts
+*.apk
+*.aab
+*.ap_
+*.dex
+
+# Profiling & logs
+*.hprof
+*.log
+
+# Signing (never commit)
+keystore.properties
+*.jks
+*.keystore
+
+# NDK / native
+.externalNativeBuild/
+.cxx/
+
+# Android Studio captures
+captures/
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+
+# Secrets
+.env

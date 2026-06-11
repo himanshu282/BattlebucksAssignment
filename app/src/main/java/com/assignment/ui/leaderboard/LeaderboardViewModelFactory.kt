@@ -2,7 +2,7 @@ package com.assignment.ui.leaderboard
 
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
-import com.assignment.core.LeaderboardFactory
+import com.assignment.leaderboard.LeaderboardFactory
 
 val LeaderboardViewModelFactory = viewModelFactory {
     initializer {

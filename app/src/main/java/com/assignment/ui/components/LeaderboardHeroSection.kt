@@ -32,18 +32,18 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.assignment.domain.LeaderboardEntry
+import com.assignment.leaderboard.LeaderboardEntry
 import com.assignment.ui.leaderboard.toOrdinalRank
-import com.himanshu.assignment.ui.theme.LeaderboardBackgroundGradientEnd
-import com.himanshu.assignment.ui.theme.LeaderboardGold
-import com.himanshu.assignment.ui.theme.LeaderboardLegendsWatermark
-import com.himanshu.assignment.ui.theme.LeaderboardOrange
-import com.himanshu.assignment.ui.theme.LeaderboardOrangeLight
-import com.himanshu.assignment.ui.theme.LeaderboardPillBackground
-import com.himanshu.assignment.ui.theme.LeaderboardPillBorder
-import com.himanshu.assignment.ui.theme.LeaderboardShieldRed
-import com.himanshu.assignment.ui.theme.LeaderboardTextPrimary
-import com.himanshu.assignment.ui.theme.LeaderboardTextSecondary
+import com.assignment.ui.theme.LeaderboardBackgroundGradientEnd
+import com.assignment.ui.theme.LeaderboardGold
+import com.assignment.ui.theme.LeaderboardLegendsWatermark
+import com.assignment.ui.theme.LeaderboardOrange
+import com.assignment.ui.theme.LeaderboardOrangeLight
+import com.assignment.ui.theme.LeaderboardPillBackground
+import com.assignment.ui.theme.LeaderboardPillBorder
+import com.assignment.ui.theme.LeaderboardShieldRed
+import com.assignment.ui.theme.LeaderboardTextPrimary
+import com.assignment.ui.theme.LeaderboardTextSecondary
 
 @Composable
 fun LeaderboardHeroSection(

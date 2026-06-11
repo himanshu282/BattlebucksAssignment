@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "com.himanshu.assignment"
+    namespace = "com.assignment"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.himanshu.assignment"
+        applicationId = "com.assignment"
         minSdk = 24
         targetSdk = 35
         versionCode = 1
@@ -41,6 +41,8 @@ android {
 
 dependencies {
 
+    implementation(project(":engine"))
+    implementation(project(":leaderboard"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
@@ -57,6 +59,7 @@ dependencies {
     implementation(libs.androidx.material.icons.extended)
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(testFixtures(project(":engine")))
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))

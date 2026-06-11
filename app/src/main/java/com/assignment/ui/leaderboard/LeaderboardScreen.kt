@@ -41,11 +41,11 @@ import com.assignment.ui.components.LeaderboardItem
 import com.assignment.ui.components.currentHeight
 import com.assignment.ui.components.nestedScrollConnection
 import com.assignment.ui.components.rememberCollapsingHeroScrollState
-import com.himanshu.assignment.ui.theme.LeaderboardBackground
-import com.himanshu.assignment.ui.theme.LeaderboardBackgroundGradientEnd
-import com.himanshu.assignment.ui.theme.LeaderboardSurface
-import com.himanshu.assignment.ui.theme.LeaderboardTextPrimary
-import com.himanshu.assignment.ui.theme.LeaderboardTextSecondary
+import com.assignment.ui.theme.LeaderboardBackground
+import com.assignment.ui.theme.LeaderboardBackgroundGradientEnd
+import com.assignment.ui.theme.LeaderboardSurface
+import com.assignment.ui.theme.LeaderboardTextPrimary
+import com.assignment.ui.theme.LeaderboardTextSecondary
 
 @Composable
 fun LeaderboardScreen(

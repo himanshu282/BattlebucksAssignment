@@ -24,11 +24,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.assignment.domain.LeaderboardEntry
-import com.himanshu.assignment.ui.theme.LeaderboardGold
-import com.himanshu.assignment.ui.theme.LeaderboardRowBackground
-import com.himanshu.assignment.ui.theme.LeaderboardTextPrimary
-import com.himanshu.assignment.ui.theme.LeaderboardTrendGreen
+import com.assignment.leaderboard.LeaderboardEntry
+import com.assignment.ui.theme.LeaderboardGold
+import com.assignment.ui.theme.LeaderboardRowBackground
+import com.assignment.ui.theme.LeaderboardTextPrimary
+import com.assignment.ui.theme.LeaderboardTrendGreen
 import kotlinx.coroutines.delay
 
 @Composable

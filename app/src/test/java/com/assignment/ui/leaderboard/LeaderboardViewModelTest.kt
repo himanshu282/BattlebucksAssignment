@@ -1,7 +1,7 @@
 package com.assignment.ui.leaderboard
 
-import com.assignment.domain.RankingCalculator
-import com.assignment.domain.LeaderboardUseCase
+import com.assignment.leaderboard.RankingCalculator
+import com.assignment.leaderboard.LeaderboardUseCase
 import com.assignment.engine.FakeScoreGenerator
 import com.assignment.engine.Player
 import com.assignment.engine.ScoreEvent

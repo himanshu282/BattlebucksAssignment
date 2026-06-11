@@ -20,11 +20,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.himanshu.assignment.ui.theme.LeaderboardGold
-import com.himanshu.assignment.ui.theme.LeaderboardGoldDark
-import com.himanshu.assignment.ui.theme.LeaderboardOrangeLight
-import com.himanshu.assignment.ui.theme.LeaderboardScoreBadgeBackground
-import com.himanshu.assignment.ui.theme.LeaderboardTextPrimary
+import com.assignment.ui.theme.LeaderboardGold
+import com.assignment.ui.theme.LeaderboardGoldDark
+import com.assignment.ui.theme.LeaderboardOrangeLight
+import com.assignment.ui.theme.LeaderboardScoreBadgeBackground
+import com.assignment.ui.theme.LeaderboardTextPrimary
 
 @Composable
 fun ScoreBadge(

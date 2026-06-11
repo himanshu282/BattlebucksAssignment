@@ -1,6 +1,6 @@
 package com.assignment.ui.leaderboard
 
-import com.assignment.domain.LeaderboardEntry
+import com.assignment.leaderboard.LeaderboardEntry
 
 data class LeaderboardUiState(
     val entries: List<LeaderboardEntry> = emptyList(),
